@@ -1,0 +1,36 @@
+﻿@using System.Timers
+@using Bloonsor.BlazorApp.Model
+@if (Inflatable is not null)
+{
+    <div style="background-image:url(/images/@Inflatable.ImageFileName);top:@(Inflatable.PositionTop)px;left:@(Inflatable.PositionLeft)px;"
+         class="unselectable balloon"
+         @onmouseup="Pop"
+         draggable="false">
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Inflatable? Inflatable { get; set; }
+
+    [Parameter]
+    public EventCallback<Inflatable> BalloonPopped { get; set; }
+
+    private void Pop()
+    {
+        if (Inflatable is null)
+        {
+            return;
+        }
+
+        Inflatable.ImageFileName = "popped.png";
+
+        var popTimer = new Timer(300);
+        popTimer.Elapsed += (sender, args) =>
+        {
+            BalloonPopped.InvokeAsync(Inflatable);
+            popTimer.Stop();
+        };
+        popTimer.Start();
+    }
+}

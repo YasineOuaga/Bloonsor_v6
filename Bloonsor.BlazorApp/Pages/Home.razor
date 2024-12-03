@@ -1,0 +1,119 @@
+﻿@page "/"
+
+@using System.Timers
+@using Bloonsor.BlazorApp.Model
+
+@implements IDisposable
+
+<div>
+    <button type="button" @onclick="StartGame">Start</button>
+    <button type="button" @onclick="StopGame">Stop</button>
+    @if (BalloonsPopped == 1)
+    {
+        <span>You popped only one bloon!</span>
+    }
+    else
+    {
+        <span>You popped @BalloonsPopped bloons!</span>
+    }
+</div>
+<div>
+    @foreach (var inflatable in Inflatables)
+    {
+        <Balloon Inflatable="@inflatable" BalloonPopped="RemoveInflatable"/>
+    }
+</div>
+
+@code
+{
+    private int BalloonsPopped { get; set; }
+    private Timer? Timer { get; set; }
+    private IList<Inflatable> Inflatables { get; set; } = new List<Inflatable>();
+
+    protected override Task OnInitializedAsync()
+    {
+        Timer = new Timer(200);
+        Timer.Elapsed += TimerOnElapsed;
+
+        return base.OnInitializedAsync();
+    }
+
+    private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
+    {
+        if (Inflatables.Count >= 10)
+        {
+            return;
+        }
+
+        var inflatable = GetInflatable();
+        Inflatables.Add(inflatable);
+
+        if (Timer is not null)
+        {
+            var random = new Random();
+            var timerInterval = random.Next(200, 2000);
+            Timer.Interval = timerInterval;
+        }
+
+        StateHasChanged();
+    }
+
+    private void StartGame()
+    {
+        if (Timer is null)
+        {
+            return;
+        }
+        Timer.Start();
+        ClearInflatables();
+        BalloonsPopped = 0;
+    }
+
+    private void StopGame()
+    {
+        if (Timer is null)
+        {
+            return;
+        }
+        Timer.Stop();
+        ClearInflatables();
+    }
+
+    private void ClearInflatables()
+    {
+        Inflatables.Clear();
+    }
+
+    private Inflatable GetInflatable()
+    {
+        var random = new Random();
+
+        var balloonNumber = random.Next(1, 4);
+        var top = random.Next(500);
+        var left = random.Next(1000);
+
+        var inflatable = new Inflatable
+            {
+                ImageFileName = $"balloon{balloonNumber}.png",
+                PositionTop = top,
+                PositionLeft = left
+            };
+
+        return inflatable;
+    }
+
+    private void RemoveInflatable(Inflatable inflatable)
+    {
+        BalloonsPopped += 1;
+        Inflatables.Remove(inflatable);
+    }
+
+    public void Dispose()
+    {
+        if (Timer is not null)
+        {
+            Timer.Stop();
+            Timer.Dispose();
+        }
+    }
+}
